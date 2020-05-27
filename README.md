@@ -1,5 +1,7 @@
 aws の利用料金を slack のチャンネルに通知します。
 
+<img width="650" alt="スクリーンショット_2020-05-27_16_56_19" src="https://user-images.githubusercontent.com/20484619/82993383-6f5b7200-a03b-11ea-9f2f-3899ac73b5fb.png">
+
 # 使い方
 
 ## 準備
