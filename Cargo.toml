@@ -1,0 +1,3 @@
+[workspace]
+members = ["server", "infra", "cli", "presenter", "module"]
+default-members = ["cli"]
