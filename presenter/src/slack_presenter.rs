@@ -16,8 +16,7 @@ pub struct Period {
 
 #[derive(Debug, Clone)]
 pub struct Cost {
-    pub period: Period,
-    pub amounts: Vec<Amount>,
+    pub attachments: Vec<Attachment>,
 }
 
 fn get_service(group: &Group) -> String {
@@ -49,36 +48,10 @@ fn get_period(result_by_time: &ResultByTime) -> Period {
     }
 }
 
-pub fn deserialize(cost: GetCostAndUsageResponse) -> Result<Vec<Cost>> {
-    let costs_by_service: Vec<Cost> = cost
-        .results_by_time
-        .unwrap()
-        .iter()
-        .map(|result_by_time| {
-            let period = get_period(&result_by_time);
-            let groups = result_by_time.groups.as_ref().unwrap();
-
-            Cost {
-                period: period,
-                amounts: groups
-                    .iter()
-                    .map(|group| Amount {
-                        service: Some(get_service(group)).unwrap(),
-                        amount: get_unblended_cost(group),
-                    })
-                    .collect(),
-            }
-        })
-        .collect();
-
-    Ok(costs_by_service)
-}
-
-pub fn create_attachment_from_cost(cost: Cost) -> Vec<Attachment> {
-    let start = cost.period.start_date;
-    let end = cost.period.end_date;
-    let fields = cost
-        .amounts
+fn create_attachment_from_cost(period: Period, amounts: Vec<Amount>) -> Vec<Attachment> {
+    let start = period.start_date;
+    let end = period.end_date;
+    let fields = amounts
         .iter()
         .map(|amount| Field {
             title: amount.clone().service,
@@ -86,8 +59,7 @@ pub fn create_attachment_from_cost(cost: Cost) -> Vec<Attachment> {
             short: Some(true),
         })
         .collect();
-    let sum: f64 = cost
-        .amounts
+    let sum: f64 = amounts
         .iter()
         .map(|a| a.amount.parse::<f64>().unwrap())
         .sum();
@@ -115,4 +87,29 @@ pub fn create_attachment_from_cost(cost: Cost) -> Vec<Attachment> {
     }];
 
     attachments
+}
+
+pub fn deserialize(cost: GetCostAndUsageResponse) -> Result<Vec<Cost>> {
+    let costs_by_service: Vec<Cost> = cost
+        .results_by_time
+        .unwrap()
+        .iter()
+        .map(|result_by_time| {
+            let period = get_period(&result_by_time);
+            let groups = result_by_time.groups.as_ref().unwrap();
+            let amounts = groups
+                .iter()
+                .map(|group| Amount {
+                    service: Some(get_service(group)).unwrap(),
+                    amount: get_unblended_cost(group),
+                })
+                .collect();
+
+            Cost {
+                attachments: create_attachment_from_cost(period, amounts),
+            }
+        })
+        .collect();
+
+    Ok(costs_by_service)
 }

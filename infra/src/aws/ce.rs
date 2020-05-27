@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::Local;
-use presenter::slack::{deserialize, Cost};
 use rusoto_ce::{
-    CostExplorer, CostExplorerClient, DateInterval, GetCostAndUsageRequest, GroupDefinition,
+    CostExplorer, CostExplorerClient, DateInterval, GetCostAndUsageRequest,
+    GetCostAndUsageResponse, GroupDefinition,
 };
 
 #[derive(Debug)]
@@ -25,7 +25,7 @@ impl Default for GetCostRequest {
 pub async fn get_cost(
     client: &CostExplorerClient,
     input: Option<GetCostRequest>,
-) -> Result<Vec<Cost>> {
+) -> Result<GetCostAndUsageResponse> {
     let req = input.unwrap_or_else(|| GetCostRequest::default());
 
     let req = GetCostAndUsageRequest {
@@ -43,8 +43,7 @@ pub async fn get_cost(
         next_page_token: None,
     };
 
-    let cost = client.get_cost_and_usage(req).await.unwrap();
-    let costs_by_service = deserialize(cost);
+    let res = client.get_cost_and_usage(req).await.unwrap();
 
-    Ok(costs_by_service?)
+    Ok(res)
 }

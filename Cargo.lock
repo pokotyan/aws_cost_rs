@@ -854,7 +854,6 @@ dependencies = [
  "chrono",
  "dotenv",
  "futures 0.3.5",
- "presenter",
  "rusoto_ce",
  "rusoto_core",
  "rusoto_credential",

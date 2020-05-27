@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
-use presenter::slack::Cost;
 use rusoto_ce::CostExplorerClient;
 use rusoto_core::Region;
 use rusoto_credential::{EnvironmentProvider, ProvideAwsCredentials};
 mod ce;
 
 pub use ce::GetCostRequest;
+pub use rusoto_ce::GetCostAndUsageResponse;
 
 pub struct AWS {
     cost_explorer_client: CostExplorerClient,
@@ -15,7 +15,10 @@ pub struct AWS {
 #[async_trait]
 pub trait AwsRepository {
     async fn new() -> Self;
-    async fn get_cost(&self, input: Option<ce::GetCostRequest>) -> Result<Vec<Cost>, ()>;
+    async fn get_cost(
+        &self,
+        input: Option<ce::GetCostRequest>,
+    ) -> Result<GetCostAndUsageResponse, ()>;
 }
 
 #[async_trait]
@@ -29,7 +32,10 @@ impl AwsRepository for AWS {
         }
     }
 
-    async fn get_cost(&self, input: Option<ce::GetCostRequest>) -> Result<Vec<Cost>, ()> {
+    async fn get_cost(
+        &self,
+        input: Option<ce::GetCostRequest>,
+    ) -> Result<GetCostAndUsageResponse, ()> {
         let res = ce::get_cost(&self.cost_explorer_client, input)
             .await
             .unwrap();
