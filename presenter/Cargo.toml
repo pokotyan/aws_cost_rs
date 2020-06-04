@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 rusoto_ce = "0.43.0"
-slack-hook = "0.7"
+serde = "1.0.110"

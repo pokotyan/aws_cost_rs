@@ -45,15 +45,10 @@ impl<T: Sync + Send + AwsRepository, U: Sync + Send + SlackModule> UseCase for G
             cost = self.aws_repository.get_cost(Some(req)).await.unwrap();
         }
 
-        let costs = deserialize(cost).unwrap();
+        let body_list = deserialize(cost, channel.clone()).unwrap();
 
-        for cost in costs {
-            self.slack.send(
-                channel.clone(),
-                "AWS Cost".to_string(),
-                "".to_string(),
-                cost.attachments,
-            );
+        for body in body_list {
+            self.slack.send(body).await;
         }
     }
 }

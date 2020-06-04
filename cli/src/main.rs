@@ -1,5 +1,5 @@
 use infra::AWS;
-use module::slack::Client;
+use module::slack::Slack;
 use structopt::StructOpt;
 mod get_cost;
 use get_cost::*;
@@ -25,7 +25,7 @@ async fn main() {
             end,
             channel,
         } => {
-            let get_cost: GetCost<AWS, Client> = UseCase::new().await;
+            let get_cost: GetCost<AWS, Slack> = UseCase::new().await;
 
             get_cost.run(start, end, channel).await;
         }

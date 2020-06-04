@@ -1,6 +1,6 @@
 use anyhow::Result;
 use rusoto_ce::{GetCostAndUsageResponse, Group, ResultByTime};
-use slack_hook::{Attachment, Field, HexColor, SlackText};
+use serde::Serialize;
 
 #[derive(Debug, Clone)]
 pub struct Amount {
@@ -14,8 +14,27 @@ pub struct Period {
     pub end_date: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct Cost {
+#[derive(Serialize, Debug, Clone)]
+pub struct Field {
+    pub title: String,
+    pub value: String,
+    pub short: bool,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Attachment {
+    pub fallback: String,
+    pub color: String,
+    pub pretext: String,
+    pub author_name: String,
+    pub fields: Vec<Field>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SlackBody {
+    pub username: String,
+    pub channel: String,
+    pub text: String,
     pub attachments: Vec<Attachment>,
 }
 
@@ -55,8 +74,8 @@ fn create_attachment_from_cost(period: Period, amounts: Vec<Amount>) -> Vec<Atta
         .iter()
         .map(|amount| Field {
             title: amount.clone().service,
-            value: SlackText::new(format!("${}", amount.clone().amount)),
-            short: Some(true),
+            value: format!("${}", amount.clone().amount),
+            short: true,
         })
         .collect();
     let sum: f64 = amounts
@@ -65,32 +84,18 @@ fn create_attachment_from_cost(period: Period, amounts: Vec<Amount>) -> Vec<Atta
         .sum();
 
     let attachments = vec![Attachment {
-        fallback: SlackText::new("attachment"),
-        text: None,
-        pretext: Some(SlackText::new(format!(
-            "{} ~ {} のAWS利用料金 は ${}です",
-            start, end, sum
-        ))),
-        color: Some(HexColor::default()),
-        fields: Some(fields),
-        author_name: Some(SlackText::new("内訳")),
-        author_link: None,
-        author_icon: None,
-        title: None,
-        title_link: None,
-        image_url: None,
-        thumb_url: None,
-        footer: None,
-        footer_icon: None,
-        ts: None,
-        mrkdwn_in: None,
+        fallback: "attachment".to_string(),
+        pretext: format!("{} ~ {} のAWS利用料金 は ${}です", start, end, sum),
+        color: "#2eb886".to_string(),
+        fields,
+        author_name: "内訳".to_string(),
     }];
 
     attachments
 }
 
-pub fn deserialize(cost: GetCostAndUsageResponse) -> Result<Vec<Cost>> {
-    let costs_by_service: Vec<Cost> = cost
+pub fn deserialize(cost: GetCostAndUsageResponse, channel: String) -> Result<Vec<SlackBody>> {
+    let costs_by_service: Vec<SlackBody> = cost
         .results_by_time
         .unwrap()
         .iter()
@@ -105,8 +110,11 @@ pub fn deserialize(cost: GetCostAndUsageResponse) -> Result<Vec<Cost>> {
                 })
                 .collect();
 
-            Cost {
+            SlackBody {
+                username: "AWS Cost".to_string(),
+                channel: channel.clone(),
                 attachments: create_attachment_from_cost(period, amounts),
+                text: " ".to_string(),
             }
         })
         .collect();
